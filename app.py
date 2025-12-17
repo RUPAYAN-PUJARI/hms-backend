@@ -13,11 +13,22 @@ app = Flask(__name__)
 CORS(app)
 
 # ---------- Configuration ----------
-basedir = os.path.abspath(os.path.dirname(__file__))
-db_dir = os.path.join(basedir, 'instance')
-os.makedirs(db_dir, exist_ok=True)
-db_path = os.path.join(db_dir, 'hms.db')
-app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+# Use PostgreSQL on production (Render), SQLite locally
+database_url = os.getenv('DATABASE_URL')
+if database_url and database_url.startswith('postgres://'):
+    # Fix for Render's postgres:// URL (SQLAlchemy requires postgresql://)
+    database_url = database_url.replace('postgres://', 'postgresql://', 1)
+
+if database_url:
+    app.config['SQLALCHEMY_DATABASE_URI'] = database_url
+else:
+    # Local SQLite for development
+    basedir = os.path.abspath(os.path.dirname(__file__))
+    db_dir = os.path.join(basedir, 'instance')
+    os.makedirs(db_dir, exist_ok=True)
+    db_path = os.path.join(db_dir, 'hms.db')
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'sqlite:///{db_path}'
+
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 # ---------- Extensions ----------
