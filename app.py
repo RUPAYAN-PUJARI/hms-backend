@@ -15,11 +15,12 @@ CORS(app)
 # ---------- Configuration ----------
 # Use PostgreSQL on production (Render), SQLite locally
 database_url = os.getenv('DATABASE_URL')
-if database_url and database_url.startswith('postgres://'):
-    # Fix for Render's postgres:// URL (SQLAlchemy requires postgresql://)
-    database_url = database_url.replace('postgres://', 'postgresql://', 1)
-
 if database_url:
+    # Normalize to psycopg driver which supports Python 3.13
+    if database_url.startswith('postgres://'):
+        database_url = database_url.replace('postgres://', 'postgresql+psycopg://', 1)
+    elif database_url.startswith('postgresql://') and '+psycopg' not in database_url:
+        database_url = database_url.replace('postgresql://', 'postgresql+psycopg://', 1)
     app.config['SQLALCHEMY_DATABASE_URI'] = database_url
 else:
     # Local SQLite for development
